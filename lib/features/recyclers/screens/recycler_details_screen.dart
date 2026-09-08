@@ -64,8 +64,23 @@ class RecyclerDetailsScreen extends StatelessWidget {
             notes: notes,
           );
 
-          // 2. Update Lot status to 'Recycler Reviewing' in LotProvider
-          lotProvider.updateLotStatus(targetLot.id, 'Recycler Reviewing');
+          // 2. Assign recycler and update Lot status
+          if (recyclerProvider.isOffline) {
+            lotProvider.assignRecyclerToLot(
+              targetLot.id,
+              recyclerId: recycler.id,
+              recyclerName: recycler.name,
+              newStatus: 'Pending Sync',
+            );
+          } else {
+            lotProvider.assignRecyclerToLot(
+              targetLot.id,
+              recyclerId: recycler.id,
+              recyclerName: recycler.name,
+              newStatus: 'Recycler Selected',
+            );
+            lotProvider.updateLotStatus(targetLot.id, 'Recycler Reviewing');
+          }
 
           if (context.mounted) {
             Navigator.pop(ctx); // Close modal
@@ -358,7 +373,47 @@ class RecyclerDetailsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppDimens.xl),
+                  const SizedBox(height: AppDimens.md),
+
+                  // Transparent Demo Notice Box
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppDimens.md),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.surfaceBorderDark
+                            : AppColors.surfaceBorderLight,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: AppDimens.sm),
+                        Expanded(
+                          child: Text(
+                            recycler.disclaimer,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppDimens.lg),
 
                   // Primary CTA: Request Handover
                   PrimaryButton(

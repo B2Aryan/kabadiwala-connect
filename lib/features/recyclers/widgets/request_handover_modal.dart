@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimens.dart';
@@ -8,8 +9,9 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../lots/models/ewaste_lot.dart';
 import '../models/recycler.dart';
+import '../services/recycler_provider.dart';
 
-/// Modal dialog confirming collector's intent to request handover with a demo recycler.
+/// Modal dialog confirming collector's intent to request handover with an authorized demo recycler.
 class RequestHandoverModal extends StatefulWidget {
   final EwasteLot lot;
   final Recycler recycler;
@@ -41,6 +43,11 @@ class _RequestHandoverModalState extends State<RequestHandoverModal> {
         ? AppColors.primaryGreenDark
         : AppColors.primaryGreenLight;
     final langProvider = LanguageProvider.of(context);
+    final recyclerProvider = Provider.of<RecyclerProvider>(
+      context,
+      listen: false,
+    );
+    final isOffline = recyclerProvider.isOffline;
 
     return Container(
       decoration: BoxDecoration(
@@ -85,8 +92,17 @@ class _RequestHandoverModalState extends State<RequestHandoverModal> {
               ),
               const SizedBox(height: 4),
               Text(
-                langProvider.tr('handoverConfirmNotice'),
-                style: AppTypography.bodySmall(isDark),
+                isOffline
+                    ? 'ऑफ़लाइन मोड: अनुरोध स्थानीय रूप से सहेजा जाएगा और सिंक प्रतीक्षित (Pending Sync) रहेगा।'
+                    : langProvider.tr('handoverConfirmNotice'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isOffline
+                      ? const Color(0xFFD97706)
+                      : (isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B)),
+                ),
               ),
               const SizedBox(height: AppDimens.lg),
 
@@ -176,6 +192,45 @@ class _RequestHandoverModalState extends State<RequestHandoverModal> {
                   ],
                 ),
               ),
+
+              // Offline disclaimer chip
+              if (isOffline) ...[
+                const SizedBox(height: AppDimens.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF261D15)
+                        : const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                    border: Border.all(color: const Color(0xFFF59E0B)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.cloud_off_rounded,
+                        size: 14,
+                        color: Color(0xFFD97706),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Offline Mode Active: Status will be marked as "Pending Sync"',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: AppDimens.xl),
 
               // Action Buttons
@@ -191,9 +246,11 @@ class _RequestHandoverModalState extends State<RequestHandoverModal> {
               else ...[
                 PrimaryButton(
                   key: const Key('send_handover_request_button'),
-                  title: langProvider.tr('sendRequest'),
-                  icon: const Icon(
-                    Icons.send_rounded,
+                  title: isOffline
+                      ? 'Save Request (Pending Sync)'
+                      : langProvider.tr('sendRequest'),
+                  icon: Icon(
+                    isOffline ? Icons.save_alt_rounded : Icons.send_rounded,
                     color: Colors.white,
                     size: 20,
                   ),

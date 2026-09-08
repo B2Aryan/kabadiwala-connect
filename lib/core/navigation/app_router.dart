@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../features/earnings/earnings_screen.dart';
+import '../../features/earnings/models/transaction_model.dart';
+import '../../features/earnings/screens/transaction_detail_screen.dart';
 import '../../features/home/home_dashboard_screen.dart';
 import '../../features/lots/create_lot_screen.dart';
 import '../../features/lots/lots_screen.dart';
@@ -26,6 +28,7 @@ class AppRoutes {
   static const String handoverTracking = '/handover-tracking';
   static const String lots = '/lots';
   static const String earnings = '/earnings';
+  static const String transactionDetail = '/transaction-detail';
   static const String profile = '/profile';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -128,6 +131,11 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const LotsScreen());
       case earnings:
         return MaterialPageRoute(builder: (_) => const EarningsScreen());
+      case transactionDetail:
+        final txn = settings.arguments as Transaction;
+        return MaterialPageRoute(
+          builder: (_) => TransactionDetailScreen(transaction: txn),
+        );
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       default:

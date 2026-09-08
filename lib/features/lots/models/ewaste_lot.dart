@@ -11,6 +11,8 @@ class EwasteLot {
   final String condition;
   final String? notes;
   final String status;
+  final String? recyclerId;
+  final String? recyclerName;
   final DateTime createdAt;
 
   const EwasteLot({
@@ -24,7 +26,9 @@ class EwasteLot {
     required this.photos,
     required this.condition,
     this.notes,
-    this.status = 'Pending Pickup',
+    this.status = 'Created',
+    this.recyclerId,
+    this.recyclerName,
     required this.createdAt,
   });
 
@@ -40,6 +44,8 @@ class EwasteLot {
     String? condition,
     String? notes,
     String? status,
+    String? recyclerId,
+    String? recyclerName,
     DateTime? createdAt,
   }) {
     return EwasteLot(
@@ -54,6 +60,8 @@ class EwasteLot {
       condition: condition ?? this.condition,
       notes: notes ?? this.notes,
       status: status ?? this.status,
+      recyclerId: recyclerId ?? this.recyclerId,
+      recyclerName: recyclerName ?? this.recyclerName,
       createdAt: createdAt ?? this.createdAt,
     );
   }

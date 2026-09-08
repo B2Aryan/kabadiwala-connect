@@ -17,6 +17,7 @@ class Recycler {
   final double rating;
   final bool isDemo;
   final String statusTag; // e.g. 'Demo Authorized Facility'
+  final String disclaimer;
 
   const Recycler({
     required this.id,
@@ -30,6 +31,7 @@ class Recycler {
     this.rating = 4.8,
     this.isDemo = true,
     this.statusTag = 'Demo Authorized Facility',
+    this.disclaimer = 'Demo facility for prototype validation. Not connected to live CPCB/SPCB government portal.',
   });
 
   /// Check if this recycler accepts a given material key

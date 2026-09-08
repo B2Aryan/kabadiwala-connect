@@ -6,6 +6,14 @@ import '../constants/app_dimens.dart';
 class AppTheme {
   AppTheme._();
 
+  static const Color primaryGreen = AppColors.primaryGreenLight;
+  static const Color cardDark = AppColors.surfaceDark;
+  static const Color cardDarkBorder = AppColors.surfaceBorderDark;
+  static const Color borderGrey = AppColors.surfaceBorderLight;
+  static const Color textDark = AppColors.textPrimaryLight;
+  static const Color textMuted = AppColors.textSecondaryLight;
+  static const Color textMutedDark = AppColors.textSecondaryDark;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

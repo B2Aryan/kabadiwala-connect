@@ -1,8 +1,18 @@
+import '../../lots/models/ewaste_lot.dart';
 import '../models/recycler.dart';
+import 'recycler_matcher.dart';
 
 /// Abstract service interface for finding e-waste recyclers.
 abstract class RecyclerService {
   Future<List<Recycler>> getNearbyRecyclers({
+    String? query,
+    String? materialKey,
+    bool? pickupOnly,
+    double? maxDistanceKm,
+  });
+
+  Future<List<RecyclerMatchResult>> getRankedRecyclers({
+    EwasteLot? lot,
     String? query,
     String? materialKey,
     bool? pickupOnly,
@@ -29,6 +39,7 @@ class MockRecyclerService implements RecyclerService {
       phone: '+91 98230 XXXXX (Demo)',
       rating: 4.8,
       statusTag: 'Authorized E-Waste Facility (Demo)',
+      disclaimer: 'Demo facility for prototype validation. Not connected to live CPCB/SPCB portal.',
     ),
     Recycler(
       id: 'REC-DEMO-002',
@@ -41,6 +52,7 @@ class MockRecyclerService implements RecyclerService {
       phone: '+91 98221 XXXXX (Demo)',
       rating: 4.6,
       statusTag: 'EPR Registered Partner (Demo)',
+      disclaimer: 'Demo facility for prototype validation. Not connected to live CPCB/SPCB portal.',
     ),
     Recycler(
       id: 'REC-DEMO-003',
@@ -53,6 +65,7 @@ class MockRecyclerService implements RecyclerService {
       phone: '+91 98212 XXXXX (Demo)',
       rating: 4.7,
       statusTag: 'Govt. Authorized Yard (Demo)',
+      disclaimer: 'Demo facility for prototype validation. Not connected to live CPCB/SPCB portal.',
     ),
     Recycler(
       id: 'REC-DEMO-004',
@@ -65,6 +78,7 @@ class MockRecyclerService implements RecyclerService {
       phone: '+91 98244 XXXXX (Demo)',
       rating: 4.5,
       statusTag: 'State Certified Unit (Demo)',
+      disclaimer: 'Demo facility for prototype validation. Not connected to live CPCB/SPCB portal.',
     ),
   ];
 
@@ -76,7 +90,7 @@ class MockRecyclerService implements RecyclerService {
     double? maxDistanceKm,
   }) async {
     // Simulate brief network latency
-    await Future.delayed(const Duration(milliseconds: 150));
+    await Future.delayed(const Duration(milliseconds: 100));
 
     return _demoRecyclers.where((rec) {
       if (query != null && query.trim().isNotEmpty) {
@@ -102,6 +116,29 @@ class MockRecyclerService implements RecyclerService {
 
       return true;
     }).toList();
+  }
+
+  @override
+  Future<List<RecyclerMatchResult>> getRankedRecyclers({
+    EwasteLot? lot,
+    String? query,
+    String? materialKey,
+    bool? pickupOnly,
+    double? maxDistanceKm,
+  }) async {
+    final filtered = await getNearbyRecyclers(
+      query: query,
+      materialKey: materialKey,
+      pickupOnly: pickupOnly,
+      maxDistanceKm: maxDistanceKm,
+    );
+
+    return RecyclerMatcher.rankRecyclers(
+      recyclers: filtered,
+      lot: lot,
+      preferPickup: pickupOnly ?? true,
+      maxDistanceKm: maxDistanceKm ?? 50.0,
+    );
   }
 
   @override

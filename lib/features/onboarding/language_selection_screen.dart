@@ -14,9 +14,14 @@ import '../../shared/widgets/eco_vectors.dart';
 class LanguageSelectionScreen extends StatelessWidget {
   const LanguageSelectionScreen({super.key});
 
-  void _onLanguageSelected(BuildContext context, AppLanguage language) {
-    Provider.of<LanguageProvider>(context, listen: false).setLanguage(language);
-    Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+  void _onLanguageSelected(BuildContext context, AppLanguage language) async {
+    await Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    ).setLanguage(language, markSelected: true);
+    if (context.mounted) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+    }
   }
 
   @override

@@ -8,12 +8,14 @@ import '../../data/repositories/mock_repository.dart';
 import '../earnings/earnings_screen.dart';
 import '../lots/lots_screen.dart';
 import '../profile/profile_screen.dart';
+import '../recyclers/models/recycler.dart';
 import 'widgets/app_bottom_navigation_bar.dart';
 import 'widgets/app_header.dart';
 import 'widgets/eco_motivation_banner.dart';
 import 'widgets/hero_create_lot_button.dart';
 import 'widgets/price_board_card.dart';
 import 'widgets/quick_action_grid.dart';
+import 'widgets/recommended_recycler_card.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -46,6 +48,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   void _navigateToRecyclers() {
     Navigator.of(context).pushNamed(AppRoutes.recyclers);
+  }
+
+  void _navigateToRecyclerDetails(Recycler recycler) {
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.recyclerDetails, arguments: {'recycler': recycler});
   }
 
   void _navigateToLots() {
@@ -135,6 +143,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       onNearbyRecyclersTap: _navigateToRecyclers,
                       onMyLotsTap: _navigateToLots,
                       onMyEarningsTap: _navigateToEarnings,
+                    ),
+                    const SizedBox(height: AppDimens.md),
+
+                    // Top Recommended Authorized Recycler Card
+                    RecommendedRecyclerCard(
+                      onSelect: _navigateToRecyclerDetails,
                     ),
                     const SizedBox(height: AppDimens.lg),
 

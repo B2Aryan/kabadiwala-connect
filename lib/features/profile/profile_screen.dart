@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/localization/language_provider.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../data/repositories/mock_repository.dart';
@@ -120,23 +121,29 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const Divider(height: 1, thickness: 0.6),
-                    ListTile(
-                      leading: Icon(
-                        Icons.translate_rounded,
-                        color: isDark
-                            ? AppColors.primaryGreenDark
-                            : AppColors.primaryGreenLight,
-                      ),
-                      title: Text(
-                        'Language: ${langProvider.currentLanguage.nativeName}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
+                    Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.translate_rounded,
                           color: isDark
-                              ? const Color(0xFFF1F5F9)
-                              : const Color(0xFF0F172A),
+                              ? AppColors.primaryGreenDark
+                              : AppColors.primaryGreenLight,
                         ),
+                        title: Text(
+                          'Language: ${langProvider.currentLanguage.nativeName}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? const Color(0xFFF1F5F9)
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        subtitle: const Text('हिन्दी • मराठी • English'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () =>
+                            _showLanguagePicker(context, langProvider, isDark),
                       ),
-                      subtitle: const Text('हिन्दी • मराठी • English'),
                     ),
                     const Divider(height: 1, thickness: 0.6),
                     ListTile(
@@ -162,6 +169,64 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showLanguagePicker(
+    BuildContext context,
+    LanguageProvider langProvider,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimens.radiusLg),
+        ),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppDimens.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimens.lg),
+                  child: Text(
+                    'भाषा चुनें / Select Language',
+                    style: AppTypography.titleLarge(isDark)
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: AppDimens.md),
+                for (final lang in AppLanguage.values)
+                  ListTile(
+                    title: Text(
+                      lang.nativeName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(lang.englishName),
+                    trailing: langProvider.currentLanguage == lang
+                        ? Icon(
+                            Icons.check_circle_rounded,
+                            color: isDark
+                                ? AppColors.primaryGreenDark
+                                : AppColors.primaryGreenLight,
+                          )
+                        : null,
+                    onTap: () async {
+                      await langProvider.setLanguage(lang, markSelected: true);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                      }
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

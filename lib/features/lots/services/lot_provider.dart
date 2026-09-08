@@ -137,6 +137,24 @@ class LotProvider extends ChangeNotifier {
     return newLot;
   }
 
+  /// Assigns a recycler to a lot and updates its status
+  void assignRecyclerToLot(
+    String lotId, {
+    required String recyclerId,
+    required String recyclerName,
+    String newStatus = 'Recycler Selected',
+  }) {
+    final index = _lots.indexWhere((l) => l.id == lotId);
+    if (index != -1) {
+      _lots[index] = _lots[index].copyWith(
+        recyclerId: recyclerId,
+        recyclerName: recyclerName,
+        status: newStatus,
+      );
+      notifyListeners();
+    }
+  }
+
   /// Updates status of a lot by id (e.g. 'Handover Requested', 'Recycler Reviewing')
   void updateLotStatus(String lotId, String newStatus) {
     final index = _lots.indexWhere((l) => l.id == lotId);

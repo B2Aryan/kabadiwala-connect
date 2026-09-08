@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimens.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/localization/language_provider.dart';
 import '../../../core/navigation/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../earnings/services/transaction_provider.dart';
+import '../../lots/models/ewaste_lot.dart';
+import '../../lots/services/lot_provider.dart';
 import '../models/handover_request.dart';
+import '../services/recycler_provider.dart';
 
 class HandoverTrackingScreen extends StatelessWidget {
   final HandoverRequest request;
@@ -20,31 +26,51 @@ class HandoverTrackingScreen extends StatelessWidget {
         ? AppColors.primaryGreenDark
         : AppColors.primaryGreenLight;
     final langProvider = LanguageProvider.of(context);
+    final recyclerProvider = Provider.of<RecyclerProvider>(context);
+    final lotProvider = Provider.of<LotProvider>(context, listen: false);
+    final txnProvider = Provider.of<TransactionProvider>(context);
+
+    // Get live updated request from provider if available
+    final liveRequest =
+        recyclerProvider.getRequestForLot(request.lotId) ?? request;
+    final isPendingSync = liveRequest.isPendingSync;
 
     final steps = [
       {
-        'title': langProvider.tr('stepRequestSent'),
-        'desc': 'लॉट अनुरोध सफलतापूर्वक रीसायकलकर्ता को भेजा गया',
-        'isDone': true,
-        'isActive': false,
+        'title': isPendingSync
+            ? 'अनुरोध सिंक प्रतीक्षित (Pending Sync)'
+            : langProvider.tr('stepRequestSent'),
+        'desc': isPendingSync
+            ? 'ऑफ़लाइन सहेजा गया। नेटवर्क बहाल होने पर भेजा जाएगा।'
+            : 'लॉट अनुरोध सफलतापूर्वक रीसायकलकर्ता को भेजा गया',
+        'isDone': !isPendingSync,
+        'isActive': isPendingSync,
       },
       {
         'title': langProvider.tr('stepRecyclerReviewing'),
         'desc': 'रीसायकलकर्ता सामग्री ग्रेड और वजन की समीक्षा कर रहा है',
-        'isDone': false,
-        'isActive': true,
+        'isDone':
+            liveRequest.status == HandoverStatus.scheduled ||
+            liveRequest.status == HandoverStatus.handoverPending ||
+            liveRequest.status == HandoverStatus.confirmed,
+        'isActive':
+            !isPendingSync &&
+            (liveRequest.status == HandoverStatus.requested ||
+                liveRequest.status == HandoverStatus.reviewing),
       },
       {
         'title': langProvider.tr('stepPickupScheduled'),
         'desc': 'पिकअप वैन प्रस्थान या डिपो में सामग्री जमा करना',
-        'isDone': false,
-        'isActive': false,
+        'isDone':
+            liveRequest.status == HandoverStatus.handoverPending ||
+            liveRequest.status == HandoverStatus.confirmed,
+        'isActive': liveRequest.status == HandoverStatus.scheduled,
       },
       {
         'title': langProvider.tr('stepHandoverConfirmed'),
         'desc': 'भौतिक वजन सत्यापन, डिजिटल रसीद और भुगतान जारी',
-        'isDone': false,
-        'isActive': false,
+        'isDone': liveRequest.status == HandoverStatus.confirmed,
+        'isActive': liveRequest.status == HandoverStatus.handoverPending,
       },
     ];
 
@@ -65,6 +91,84 @@ class HandoverTrackingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Pending Sync Action Card (if offline / pending sync)
+                  if (isPendingSync) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: AppDimens.md),
+                      padding: const EdgeInsets.all(AppDimens.md),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF261D15)
+                            : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                        border: Border.all(color: const Color(0xFFF59E0B)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.cloud_off_rounded,
+                            color: Color(0xFFD97706),
+                            size: 22,
+                          ),
+                          const SizedBox(width: AppDimens.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'ऑफ़लाइन अनुरोध (Offline Pending Sync)',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFD97706),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'कनेक्ट होने पर रीसायकलकर्ता को भेजने के लिए सिंक करें।',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? const Color(0xFFFDE68A)
+                                        : const Color(0xFF92400E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD97706),
+                              foregroundColor: Colors.white,
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () {
+                              recyclerProvider.setOffline(false);
+                              final synced = recyclerProvider
+                                  .syncPendingRequests(lotProvider);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    langProvider.tr(
+                                      'syncSuccess',
+                                      params: {'count': '$synced'},
+                                    ),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: Text(langProvider.tr('syncNow')),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // Request Summary Header Card
                   AppCard(
                     padding: const EdgeInsets.all(AppDimens.lg),
@@ -75,7 +179,7 @@ class HandoverTrackingScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              request.lotId,
+                              liveRequest.lotId,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -100,7 +204,7 @@ class HandoverTrackingScreen extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                request.status.localizedLabel(
+                                liveRequest.status.localizedLabel(
                                   langProvider.currentLanguage.code,
                                 ),
                                 style: const TextStyle(
@@ -114,13 +218,13 @@ class HandoverTrackingScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          request.recyclerName,
+                          liveRequest.recyclerName,
                           style: AppTypography.titleMedium(isDark)
                               .copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${request.quantity} ${request.unit} • ₹${request.estimatedValue.toInt()} Estimated',
+                          '${liveRequest.quantity} ${liveRequest.unit} • ₹${liveRequest.estimatedValue.toInt()} Estimated',
                           style: AppTypography.bodySmall(isDark),
                         ),
                       ],
@@ -272,22 +376,132 @@ class HandoverTrackingScreen extends StatelessWidget {
                   const SizedBox(height: AppDimens.xl),
 
                   // Navigation Actions
+                  if (liveRequest.status == HandoverStatus.confirmed) ...[
+                    // Primary: View Digital Receipt
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppDimens.buttonHeightStandard,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppDimens.radiusLg,
+                            ),
+                          ),
+                        ),
+                        onPressed: () async {
+                          var txn = txnProvider.getTransactionByLotId(
+                            liveRequest.lotId,
+                          );
+                          if (txn == null) {
+                            final lot = lotProvider.lots
+                                .cast<EwasteLot?>()
+                                .firstWhere(
+                                  (l) => l?.id == liveRequest.lotId,
+                                  orElse: () => null,
+                                );
+                            txn = await txnProvider
+                                .recordHandoverCompletionFromRequest(
+                                  request: liveRequest,
+                                  lot: lot,
+                                );
+                          }
+                          if (context.mounted) {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.transactionDetail,
+                              arguments: txn,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                        label: Text(
+                          langProvider.tr('viewReceipt'),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppDimens.md),
+                  ] else if (!isPendingSync) ...[
+                    // Simulate Handover Completion (Demo)
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppDimens.buttonHeightStandard,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppDimens.radiusLg,
+                            ),
+                          ),
+                        ),
+                        onPressed: () async {
+                          recyclerProvider.advanceRequestStatus(
+                            liveRequest.lotId,
+                            HandoverStatus.confirmed,
+                            lotProvider,
+                          );
+                          final lot = lotProvider.lots
+                              .cast<EwasteLot?>()
+                              .firstWhere(
+                                (l) => l?.id == liveRequest.lotId,
+                                orElse: () => null,
+                              );
+                          await txnProvider.recordHandoverCompletionFromRequest(
+                            request: liveRequest,
+                            lot: lot,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  langProvider.tr('statusHandoverCompleted'),
+                                ),
+                                backgroundColor: AppTheme.primaryGreen,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.verified_rounded, size: 18),
+                        label: Text(
+                          langProvider.tr('simulateHandoverComplete'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppDimens.md),
+                  ],
+
+                  // Secondary Action: Back to My Lots
                   SizedBox(
                     width: double.infinity,
                     height: AppDimens.buttonHeightStandard,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? const Color(0xFF162A1F)
-                            : const Color(0xFFE8F5E9),
-                        foregroundColor: activeGreen,
-                        elevation: 0,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark
+                            ? Colors.white
+                            : AppTheme.textDark,
+                        side: BorderSide(
+                          color: isDark
+                              ? AppColors.surfaceBorderDark
+                              : AppColors.surfaceBorderLight,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             AppDimens.radiusLg,
-                          ),
-                          side: BorderSide(
-                            color: activeGreen.withValues(alpha: 0.4),
                           ),
                         ),
                       ),

@@ -12,12 +12,14 @@ import '../models/recycler.dart';
 class RecyclerCard extends StatelessWidget {
   final Recycler recycler;
   final EwasteLot? matchingLot;
+  final double? matchScore;
   final VoidCallback onTap;
 
   const RecyclerCard({
     super.key,
     required this.recycler,
     this.matchingLot,
+    this.matchScore,
     required this.onTap,
   });
 
@@ -75,6 +77,34 @@ class RecyclerCard extends StatelessWidget {
                                 .copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
+                        if (matchScore != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF132A1C)
+                                  : const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(
+                                AppDimens.radiusSm,
+                              ),
+                              border: Border.all(
+                                color: activeGreen.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Text(
+                              '${matchScore!.toInt()}% Match',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: activeGreen,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         // Demo indicator badge
                         Container(
                           padding: const EdgeInsets.symmetric(

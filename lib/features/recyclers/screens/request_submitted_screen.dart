@@ -62,14 +62,18 @@ class RequestSubmittedScreen extends StatelessWidget {
 
                   // Title
                   Text(
-                    langProvider.tr('requestSubmittedTitle'),
+                    request.isPendingSync
+                        ? 'अनुरोध सहेजा गया (Pending Sync)'
+                        : langProvider.tr('requestSubmittedTitle'),
                     style: AppTypography.headlineMedium(isDark)
                         .copyWith(fontWeight: FontWeight.w800),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    langProvider.tr('requestSubmittedSub'),
+                    request.isPendingSync
+                        ? 'अनुरोध स्थानीय रूप से सहेजा गया है। ऑनलाइन कनेक्ट होते ही रीसायकलकर्ता को भेजा जाएगा।'
+                        : langProvider.tr('requestSubmittedSub'),
                     style: AppTypography.bodyMedium(isDark),
                     textAlign: TextAlign.center,
                   ),
@@ -120,7 +124,9 @@ class RequestSubmittedScreen extends StatelessWidget {
                         const SizedBox(height: AppDimens.sm),
                         _buildRow(
                           'स्थिति (Status)',
-                          langProvider.tr('statusPending'),
+                          request.status.localizedLabel(
+                            langProvider.currentLanguage.code,
+                          ),
                           isDark,
                           isStatus: true,
                         ),
