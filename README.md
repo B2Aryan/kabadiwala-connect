@@ -7,7 +7,7 @@
 
 ## 📌 Project Information
 
-- **Competition**: Smart India Hackathon (SIH) 2026
+- **Competition**: Smart India Hackathon (SIH) 2026.  
 - **Problem Statement ID**: 26229
 - **Theme**: Clean & Green Technology
 - **Team**: Hackaholics
